@@ -1,4 +1,6 @@
 [![CI](https://github.com/Borewit/node-readable-to-web-readable-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/Borewit/node-readable-to-web-readable-stream/actions/workflows/ci.yml)
+[![NPM version](https://badge.fury.io/js/node-readable-to-web-readable-stream.svg)](https://npmjs.org/package/node-readable-to-web-readable-stream)
+[![npm downloads](http://img.shields.io/npm/dm/node-readable-to-web-readable-stream.svg)](https://npmcharts.com/compare/node-readable-to-web-readable-stream?start=600&interval=30)
 
 # node-readable-to-web-readable-stream
 
