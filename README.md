@@ -1,3 +1,5 @@
+[![CI](https://github.com/Borewit/node-readable-to-web-readable-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/Borewit/node-readable-to-web-readable-stream/actions/workflows/ci.yml)
+
 # node-readable-to-web-readable-stream
 
 **node-readable-to-web-readable-stream** is a utility that converts a Node.js `Readable` stream into a WHATWG-compatible `ReadableStream`. This is particularly useful for integrating Node.js streams with web-native streaming APIs.
