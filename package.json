@@ -1,6 +1,6 @@
 {
   "name": "node-readable-to-web-readable-stream",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Convert Node Readable to Web API ReadableStream",
   "type": "module",
   "exports": "./lib/index.js",
