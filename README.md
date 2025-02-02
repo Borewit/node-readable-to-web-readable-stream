@@ -25,14 +25,14 @@ yarn add node-readable-to-web-readable-stream
 Here's how you can use this utility to convert a Node.js `Readable` stream into a web `ReadableStream`:
 
 ```javascript
-const { toWebReadableStream } = require('node-readable-to-web-readable-stream');
-const fs = require('fs');
+import {makeByteReadableStreamFromNodeReadable} from 'node-readable-to-web-readable-stream';
+import {createReadStream} from 'fs';
 
 // Create a Node.js Readable stream
 const nodeReadable = fs.createReadStream('example.txt');
 
 // Convert to a web ReadableStream
-const webReadable = toWebReadableStream(nodeReadable);
+const webReadable = makeByteReadableStreamFromNodeReadable(nodeReadable);
 
 // Now you can use webReadable as a WHATWG ReadableStream
 ```

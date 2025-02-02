@@ -34,6 +34,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
       : null;
 
     if (!leftoverChunk && isNodeStreamEnded) {
+      controller.close(); // Signal EOF
       byobRequest.respond(0); // Cancel BYOB request
     }
   };
