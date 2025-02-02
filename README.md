@@ -37,6 +37,11 @@ const webReadable = makeByteReadableStreamFromNodeReadable(nodeReadable);
 // Now you can use webReadable as a WHATWG ReadableStream
 ```
 
+## Compatibility
+
+This is an ECMAScript Module (ESM).
+
+
 ## API
 
 ### `toWebReadableStream(nodeReadable)`
