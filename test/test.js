@@ -37,6 +37,34 @@ describe('makeByteReadableStreamFromFile()', () => {
     }
   });
 
+  it('read more data then available #2', async () => {
+    const nodeReadable = new SourceStream('123');
+    try {
+      const webReadableStream = makeByteReadableStreamFromNodeReadable(nodeReadable);
+      try {
+        const streamReader = webReadableStream.getReader({mode: 'byob'});
+        try {
+
+          let res;
+          let buf = new Uint8Array(4);
+          res = await streamReader.read(buf);
+          assert.strictEqual(res.done, false, 'result.done');
+          assert.equal(res.value.length, 3, 'should indicate only 3 bytes are actually read');
+          buf = new Uint8Array(4);
+          res = await streamReader.read(buf);
+          assert.strictEqual(res.done, true, 'result.done');
+          assert.equal(res.value.length, 0, 'should indicate no more bytes are available');
+        } finally {
+          streamReader.releaseLock();
+        }
+      } finally {
+        await webReadableStream.cancel();
+      }
+    } finally {
+      nodeReadable.destroy();
+    }
+  });
+
   it('read from a streamed data chunk', async () => {
     const nodeReadable = new SourceStream('\x05peter');
     try {

@@ -58,14 +58,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
       nodeReadable.resume();
     },
     pull(controller: ReadableByteStreamController) {
-      if (leftoverChunk) {
-        processLeftover(controller);
-        return;
-      }
-      if (isNodeStreamEnded) {
-        controller.close();
-        return;
-      }
+      processLeftover(controller);
     },
     cancel(reason) {
       nodeReadable.destroy(reason);
