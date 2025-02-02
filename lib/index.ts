@@ -10,9 +10,19 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
   const processLeftover = (controller: ReadableByteStreamController) => {
     const byobRequest = controller.byobRequest as ReadableStreamBYOBRequest | undefined;
 
-    if (!byobRequest || !byobRequest.view) return;
+    if (!byobRequest) {
+      if(leftoverChunk && leftoverChunk.length > 0) {
+        controller.enqueue(leftoverChunk);
+        leftoverChunk = null;
+      }
+      if (isNodeStreamEnded) {
+        controller.close(); // Signal EOF
+      }
+      return;
+    }
 
     const view = byobRequest.view;
+    if (!view) return;
 
     if (!leftoverChunk) {
       if (isNodeStreamEnded) {

@@ -10,7 +10,8 @@
     "compile-src": "tsc -p lib",
     "compile": "yarn run compile-src",
     "build": "yarn run clean && yarn run compile",
-    "test": "mocha"
+    "test": "mocha",
+    "bun:test": "bun run --bun mocha"
   },
   "files": [
     "lib/**/*.js",
