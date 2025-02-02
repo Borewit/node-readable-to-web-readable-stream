@@ -1,25 +1,12 @@
-import { makeByteReadableStreamFromNodeReadable } from '../lib/index.js';
-import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import {makeByteReadableStreamFromNodeReadable} from '../lib/index.js';
 import path from 'node:path';
+import {describe, it} from "mocha";
+import {assert} from "chai";
+import {fileURLToPath} from "node:url";
+import {makeByteReadableStreamFromFile, SourceStream} from "./util.js";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
-
-import { describe, it } from "mocha";
-import { assert } from "chai";
-import { fileURLToPath } from "node:url";
-
-export async function makeByteReadableStreamFromFile(filename) {
-
-  const fileInfo = await stat(filename);
-  const nodeStream = createReadStream(filename);
-
-  return {
-    fileSize: fileInfo.size,
-    stream: makeByteReadableStreamFromNodeReadable(nodeStream)
-  };
-}
 
 describe('makeByteReadableStreamFromFile()', () => {
 
@@ -47,6 +34,46 @@ describe('makeByteReadableStreamFromFile()', () => {
       }
     } finally {
       webStream.stream.cancel();
+    }
+  });
+
+  it('read from a streamed data chunk', async () => {
+    const nodeReadable = new SourceStream('\x05peter');
+    try {
+      const webReadableStream = makeByteReadableStreamFromNodeReadable(nodeReadable);
+      try {
+        const streamReader = webReadableStream.getReader({mode: 'byob'});
+        try {
+
+          let buf;
+          let res;
+
+          // read only one byte from the chunk
+          buf = new Uint8Array(1);
+          res = await streamReader.read(buf);
+          assert.strictEqual(res.done, false, 'result.done');
+          assert.strictEqual(res.value.length, 1, 'Should read exactly one byte');
+          assert.strictEqual(res.value[0], 5, '0x05 == 5');
+
+          // should decode string from chunk
+          buf = new Uint8Array(5);
+          res = await streamReader.read(buf);
+          assert.strictEqual(res.done, false, 'result.done');
+          assert.strictEqual(res.value.length, 5, 'Should read 5 bytes');
+          assert.strictEqual(new TextDecoder('latin1').decode(res.value), 'peter');
+
+          // should reject at the end of the stream
+          buf = new Uint8Array(1);
+          res = await streamReader.read(buf);
+          assert.strictEqual(res.done, true, 'should indicate end of stream');
+        } finally {
+          streamReader.releaseLock();
+        }
+      } finally {
+        await webReadableStream.cancel();
+      }
+    } finally {
+      nodeReadable.destroy();
     }
   });
 });
