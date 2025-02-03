@@ -1,6 +1,6 @@
 // Utilities for testing
 
-import { Readable } from 'node:stream';
+import type { Readable } from 'node:stream';
 import {ReadableStream, type ReadableByteStreamController, type ReadableStreamBYOBRequest} from 'node:stream/web';
 
 export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): ReadableStream {
