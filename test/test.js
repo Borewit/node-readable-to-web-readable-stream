@@ -3,6 +3,7 @@ import path from 'node:path';
 import {describe, it} from "mocha";
 import {assert} from "chai";
 import {fileURLToPath} from "node:url";
+import {PassThrough} from "node:stream";
 import {makeByteReadableStreamFromFile, SourceStream} from "./util.js";
 
 const filename = fileURLToPath(import.meta.url);
@@ -92,6 +93,49 @@ describe('ReadableStreamDefaultReader', () => {
       }
     } finally {
       nodeReadable.destroy();
+    }
+  });
+
+  it('should apply backpressure, when data is not consumed', async () => {
+    const nodePassThrough = new PassThrough();
+    try {
+      const webReadableStream = makeByteReadableStreamFromNodeReadable(nodePassThrough);
+      try {
+        const streamReader = webReadableStream.getReader();
+        try {
+          let result;
+          let bytesWritten = 0;
+          const data = new Uint8Array(256);
+          let pushMoreData;
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+          do {
+            pushMoreData = nodePassThrough.push(data);
+            bytesWritten += data.length;
+          } while(pushMoreData && bytesWritten < 32 * 1024);
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+
+          let bytesRead = 0;
+          do {
+            const {value, done} = await streamReader.read();
+            assert.isFalse(done, 'Read stream result');
+            bytesRead += value.length;
+          } while(bytesRead < bytesWritten);
+          const prom = streamReader.read(); // Read more than there is available
+          assert.isFalse(nodePassThrough.isPaused(), 'Node Readable is paused after reading all bytes written');
+          do {
+            pushMoreData = nodePassThrough.push(data);
+            bytesWritten += data.length;
+          } while(pushMoreData && bytesWritten < 32 * 1024);
+          await prom;
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+        } finally {
+          streamReader.releaseLock();
+        }
+      } finally {
+        await webReadableStream.cancel();
+      }
+    } finally {
+      nodePassThrough.destroy();
     }
   });
 });
@@ -191,6 +235,51 @@ describe('ReadableStreamBYOBReader', () => {
       }
     } finally {
       nodeReadable.destroy();
+    }
+  });
+
+  it('should apply backpressure, when data is not consumed', async () => {
+    const nodePassThrough = new PassThrough();
+    try {
+      const webReadableStream = makeByteReadableStreamFromNodeReadable(nodePassThrough);
+      try {
+        const streamReader = webReadableStream.getReader({mode: 'byob'});
+        try {
+          let result;
+          let bytesWritten = 0;
+          const data = new Uint8Array(256);
+          let pushMoreData;
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+          do {
+            pushMoreData = nodePassThrough.push(data);
+            bytesWritten += data.length;
+          } while(pushMoreData && bytesWritten < 32 * 1024);
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+
+          let bytesRead = 0;
+          do {
+            const buf = new Uint8Array(256);
+            const {value, done} = await streamReader.read(buf);
+            assert.isFalse(done, 'Read stream result');
+            bytesRead += value.length;
+          } while(bytesRead < bytesWritten);
+          const buf = new Uint8Array(256);
+          const prom = streamReader.read(buf); // Read more than there is available
+          assert.isFalse(nodePassThrough.isPaused(), 'Node Readable is paused after reading all bytes written');
+          do {
+            pushMoreData = nodePassThrough.push(data);
+            bytesWritten += data.length;
+          } while(pushMoreData && bytesWritten < 32 * 1024);
+          await prom;
+          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+        } finally {
+          streamReader.releaseLock();
+        }
+      } finally {
+        await webReadableStream.cancel();
+      }
+    } finally {
+      nodePassThrough.destroy();
     }
   });
 });

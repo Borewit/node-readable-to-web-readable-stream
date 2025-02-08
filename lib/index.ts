@@ -6,6 +6,10 @@ import {ReadableStream, type ReadableByteStreamController, type ReadableStreamBY
 export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): ReadableStream {
   let leftoverChunk: Uint8Array | null = null; // Proper declaration
   let isNodeStreamEnded = false;
+  /**
+   * Number of bytes in leftoverChunk, after which backpressure is applied
+   */
+  const highWaterMark = 16 * 1024;
 
   const processLeftover = (controller: ReadableByteStreamController) => {
     const byobRequest = controller.byobRequest as ReadableStreamBYOBRequest | undefined;
@@ -49,6 +53,8 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
     }
   };
 
+  nodeReadable.pause(); // Start in pause mode
+
   return new ReadableStream({
     type: 'bytes',
     start(controller: ReadableByteStreamController) {
@@ -57,6 +63,19 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
           ? new Uint8Array([...leftoverChunk, ...chunk])
           : new Uint8Array(chunk);
         processLeftover(controller);
+        if (!nodeReadable.isPaused()) {
+          if (controller.desiredSize === null) {
+            // BYOB Request backpressure
+            if (leftoverChunk && leftoverChunk.length > highWaterMark && !nodeReadable.isPaused()) {
+              nodeReadable.pause(); // Apply back pressure
+            }
+          } else {
+            // Default request backpressure
+            if (controller.desiredSize <= 0) {
+              nodeReadable.pause(); // Start in pause mode
+            }
+          }
+        }
       });
       nodeReadable.once('end', () => {
         isNodeStreamEnded = true;
@@ -65,10 +84,12 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable): 
       nodeReadable.once('error', err => {
         controller.error(err);
       });
-      nodeReadable.resume();
     },
     pull(controller: ReadableByteStreamController) {
       processLeftover(controller);
+      if (nodeReadable.isPaused()) {
+        nodeReadable.resume();
+      }
     },
     cancel(reason) {
       nodeReadable.destroy(reason);
