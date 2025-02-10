@@ -4,7 +4,10 @@
 
 # node-readable-to-web-readable-stream
 
-**node-readable-to-web-readable-stream** is a utility that converts a Node.js `Readable` stream into a WHATWG-compatible `ReadableStream`. This is particularly useful for integrating Node.js streams with web-native streaming APIs.
+**node-readable-to-web-readable-stream** is a utility that converts a [Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable) stream into a [Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+This is particularly useful for integrating Node.js streams with web-native streaming APIs.
+
+To convert in the opposite direction, see may use [readable-web-to-node-stream](https://github.com/Borewit/readable-web-to-node-stream) instead.
 
 ## Installation
 
@@ -22,7 +25,7 @@ yarn add node-readable-to-web-readable-stream
 
 ## Usage
 
-Here's how you can use this utility to convert a Node.js `Readable` stream into a web `ReadableStream`:
+Here's how you can use this utility to convert a [Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable) stream into a [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream):
 
 ```javascript
 import {makeByteReadableStreamFromNodeReadable} from 'node-readable-to-web-readable-stream';
@@ -40,17 +43,26 @@ const webReadable = makeByteReadableStreamFromNodeReadable(nodeReadable);
 ## Compatibility
 
 This is an ECMAScript Module (ESM).
+Cross-platform compliant:
+- Node.js ≥ 18
+- Bum ≥ 1.2
+- Modern web browsers
 
+You can load the project with `require` in Node.js ≥ 22
+
+## Features
+- Supports stream backpressure
+- BYOB (Bring Your Own Buffer) compliant
 
 ## API
 
 ### `toWebReadableStream(nodeReadable)`
 
 - **Parameters:**
-  - `nodeReadable` (Node.js `Readable`): The Node.js Readable stream to convert.
+  - `nodeReadable` ([Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable)): The Node.js **Readable** stream to convert.
 
 - **Returns:**
-  - A WHATWG-compatible `ReadableStream`.
+  - A [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream).
 
 ## License
 

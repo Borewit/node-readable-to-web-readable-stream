@@ -42,7 +42,9 @@
     "Node",
     "ReadableStream",
     "convert",
-    "WHATWG"
+    "WHATWG",
+    "BYOB",
+    "Web API"
   ],
   "repository": {
     "url": "https://github.com/Borewit/node-readable-to-web-readable-stream.git"
