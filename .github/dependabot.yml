@@ -1,0 +1,18 @@
+version: 2
+updates:
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "06:00"
+    open-pull-requests-limit: 20
+    versioning-strategy: increase
+    target-branch: main
+    labels:
+      - dependencies
+    groups:
+      types:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
