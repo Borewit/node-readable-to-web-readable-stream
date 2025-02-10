@@ -29,7 +29,7 @@
 			},
 			"correctness": {
 				"noUnusedImports": "error",
-				// ToDo "noNodejsModules": "error"
+				"noNodejsModules": "error"
 			},
 			"style":{
 				"useConsistentBuiltinInstantiation": "error",
