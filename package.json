@@ -9,6 +9,7 @@
     "clean": "del-cli 'lib/**/*.js' 'lib/**/*.js.map' 'lib/**/*.d.ts'",
     "compile-src": "tsc -p lib",
     "compile": "yarn run compile-src",
+    "lint": "biome check",
     "build": "yarn run clean && yarn run compile",
     "test": "mocha",
     "bun:test": "bun run --bun mocha"
@@ -25,6 +26,7 @@
   "license": "MIT",
   "packageManager": "yarn@4.6.0",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.10.7",

@@ -24,6 +24,9 @@ jobs:
       - name: Yarn install
         run: yarn install
 
+      - name: Biome code check
+        run: yarn run lint
+
       - name: Build
         run: yarn run build
 
