@@ -11,8 +11,6 @@ const dirname = path.dirname(filename);
 
 describe('ReadableStreamDefaultReader', () => {
 
-  const mode = 'byob';
-
   it('read more data then available', async () => {
 
     const filePath = path.join(dirname, 'sample', 'bach-goldberg-variatians-05.sv8.mpc');
@@ -21,8 +19,7 @@ describe('ReadableStreamDefaultReader', () => {
     try {
       const reader = webStream.stream.getReader();
       try {
-        const bytesRequested = 4100;
-        let bytesRemaining = bytesRequested;
+        let bytesRemaining = 4100;
         let bytesRead = 0;
         let result
         do {
@@ -105,27 +102,28 @@ describe('ReadableStreamDefaultReader', () => {
         try {
           let result;
           let bytesWritten = 0;
-          const data = new Uint8Array(256);
           let pushMoreData;
-          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+          assert.isFalse(nodePassThrough.isPaused(), 'Node Readable is not paused of initialization');
           do {
+            const data = new Uint8Array(256);
             pushMoreData = nodePassThrough.push(data);
             bytesWritten += data.length;
-          } while(pushMoreData && bytesWritten < 32 * 1024);
+         } while(pushMoreData && bytesWritten < 128 * 1024);
+          assert.isFalse(pushMoreData, 'Should eventually backpressure');
           assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
-
           let bytesRead = 0;
           do {
             const {value, done} = await streamReader.read();
             assert.isFalse(done, 'Read stream result');
             bytesRead += value.length;
-          } while(bytesRead < bytesWritten);
+         } while(bytesRead < bytesWritten);
           const prom = streamReader.read(); // Read more than there is available
           assert.isFalse(nodePassThrough.isPaused(), 'Node Readable is paused after reading all bytes written');
           do {
+            const data = new Uint8Array(256);
             pushMoreData = nodePassThrough.push(data);
             bytesWritten += data.length;
-          } while(pushMoreData && bytesWritten < 32 * 1024);
+          } while(pushMoreData && bytesWritten < 128 * 1024);
           await prom;
           assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
         } finally {
@@ -249,7 +247,7 @@ describe('ReadableStreamBYOBReader', () => {
           let bytesWritten = 0;
           const data = new Uint8Array(256);
           let pushMoreData;
-          assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
+          assert.isFalse(nodePassThrough.isPaused(), 'Node Readable should not be paused after initialization');
           do {
             pushMoreData = nodePassThrough.push(data);
             bytesWritten += data.length;
@@ -269,7 +267,7 @@ describe('ReadableStreamBYOBReader', () => {
           do {
             pushMoreData = nodePassThrough.push(data);
             bytesWritten += data.length;
-          } while(pushMoreData && bytesWritten < 32 * 1024);
+          } while(pushMoreData && bytesWritten < 64 * 1024);
           await prom;
           assert.isTrue(nodePassThrough.isPaused(), 'Node Readable is paused');
         } finally {

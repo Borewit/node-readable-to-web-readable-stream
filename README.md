@@ -56,10 +56,11 @@ You can load the project with `require` in Node.js ≥ 22
 
 ## API
 
-### `toWebReadableStream(nodeReadable)`
+### `toWebReadableStream(nodeReadable, options)`
 
 - **Parameters:**
   - `nodeReadable` ([Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable)): The Node.js **Readable** stream to convert.
+  - `options` Optional: `{highWaterMark?: number}`, high-water mark in bytes, default 16 kB.
 
 - **Returns:**
   - A [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream).
