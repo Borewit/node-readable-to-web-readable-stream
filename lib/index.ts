@@ -10,6 +10,7 @@ interface ByteReadableStreamFromNodeReadableOptions {
  * @param options Options
  */
 export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, options: ByteReadableStreamFromNodeReadableOptions = {}): ReadableStream<Uint8Array> {
+  let closed = false;
   let isNodeStreamEnded = false;
   const highWaterMark = options.highWaterMark ?? 16 * 1024;
   const queue: Uint8Array[] = [];
@@ -18,6 +19,13 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
    */
   let queueLength = 0;
   let pullRequest = false
+
+  function close(controller: ReadableByteStreamController) {
+    if(!closed) {
+      closed = true;
+      controller.close();
+    }
+  }
 
   // This function will process any leftover bytes
   const processLeftover = (controller: ReadableByteStreamController): boolean => {
@@ -32,7 +40,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
         return false;
       }
       if (isNodeStreamEnded) {
-        controller.close(); // Signal EOF
+        close(controller); // Signal EOF
       }
       return true;
     }
@@ -42,7 +50,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
 
     if (!chunk) {
       if (isNodeStreamEnded) {
-        controller.close(); // Signal EOF
+        close(controller); // Signal EOF
         byobRequest.respond(0); // Cancel BYOB request
         return false;
       }
@@ -62,7 +70,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
     }
 
     if (chunk.length === 0 && isNodeStreamEnded) {
-      controller.close(); // Signal EOF
+      close(controller); // Signal EOF
       byobRequest.respond(0); // Cancel BYOB request
     }
     return false
@@ -102,6 +110,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
       }
     },
     cancel(reason) {
+      closed = true; // Avoid controller is closed twice
       nodeReadable.destroy(reason);
     },
   });
