@@ -69,7 +69,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
    * Queue length in bytes
    */
   let queueLength = 0;
-  let pullRequest = false
+  let pullRequest = 0;
 
   function close(controller: ReadableByteStreamController) {
     if(!closed) {
@@ -79,7 +79,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
   }
 
   // This function will process any leftover bytes
-  const processLeftover = (controller: ReadableByteStreamController): boolean => {
+  const processLeftover = (controller: ReadableByteStreamController): void => {
     const byobRequest = controller.byobRequest;
     const chunk = queue.shift();
     if (chunk) {
@@ -88,24 +88,25 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
     if (!byobRequest) {
       if (chunk) {
         controller.enqueue(chunk);
-        return false;
+        --pullRequest;
+        return;
       }
       if (isNodeStreamEnded) {
         close(controller); // Signal EOF
       }
-      return true;
+      return;
     }
 
     const view = byobRequest.view;
-    if (!view) return true;
+    if (!view) return;
 
     if (!chunk) {
       if (isNodeStreamEnded) {
         close(controller); // Signal EOF
         byobRequest.respond(0); // Cancel BYOB request
-        return false;
+        --pullRequest;
       }
-      return true;
+      return;
     }
 
     const bytesToCopy = Math.min(view.byteLength, chunk.length);
@@ -113,6 +114,7 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
       chunk.subarray(0, bytesToCopy)
     );
     byobRequest.respond(bytesToCopy);
+    --pullRequest;
 
     if (bytesToCopy < chunk.length) {
       const remainder = chunk.subarray(bytesToCopy);
@@ -123,8 +125,8 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
     if (chunk.length === 0 && isNodeStreamEnded) {
       close(controller); // Signal EOF
       byobRequest.respond(0); // Cancel BYOB request
+      --pullRequest;
     }
-    return false
   };
 
   return new ReadableStream({
@@ -133,8 +135,8 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
       nodeReadable.on('data', chunk => {
         queue.push(chunk);
         queueLength += chunk.length;
-        if (pullRequest) {
-          pullRequest = processLeftover(controller);
+        if(pullRequest > 0) {
+          processLeftover(controller);
         }
 
         // Apply backpressure if needed.
@@ -155,7 +157,8 @@ export function makeByteReadableStreamFromNodeReadable(nodeReadable: Readable, o
       });
     },
     pull(controller: ReadableByteStreamController) {
-      pullRequest = processLeftover(controller);
+      ++pullRequest;
+      processLeftover(controller);
       if (nodeReadable.isPaused() && queueLength < highWaterMark) {
         nodeReadable.resume();
       }
