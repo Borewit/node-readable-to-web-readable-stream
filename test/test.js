@@ -5,6 +5,7 @@ import {assert} from "chai";
 import {fileURLToPath} from "node:url";
 import {PassThrough} from "node:stream";
 import {makeByteReadableStreamFromFile, makeDefaultReadableStreamFromFile, SourceStream} from "./util.js";
+import process from "node:process";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -415,6 +416,30 @@ describe('Byte ReadableStream from Node Readable', () => {
         nodePassThrough.destroy();
       }
     });
+
+    it('should handle pending pull requests', async function(){
+
+      const filePath = path.join(dirname, 'sample', 'flac.flac');
+
+      const webStream = await makeByteReadableStreamFromFile(filePath);
+      try {
+        const reader = webStream.stream.getReader({mode: 'byob'});
+        let buffer;
+        let result;
+        const bytesToRead = 175710
+        buffer = new Uint8Array(bytesToRead);
+        result = await reader.read(buffer, {min: bytesToRead});
+        assert.isFalse(result.done, `After reading ${bytesToRead} bytes: result.done`);
+        if (process.versions.node && process.versions.node.split('.').map(Number)[0] >= 20 && !process.versions.bun) {
+          assert.strictEqual(result.value.length, bytesToRead,`After reading ${bytesToRead} bytes: result.value.length`);
+        } else {
+          assert.isBelow(result.value.length, bytesToRead,`Expect min bytes option not to be implemented ${result.value.length}<${bytesToRead}`);
+        }
+      } finally {
+        webStream.stream.cancel();
+      }
+    });
+
   });
 
 });
