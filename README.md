@@ -25,7 +25,10 @@ yarn add node-readable-to-web-readable-stream
 
 ## Usage
 
-Here's how you can use this utility to convert a [Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable) stream into a [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream):
+You can either convert to a [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream) byte mode, or default mode.
+
+Here's how you can use this utility to convert a [Node.js stream.Readable](https://nodejs.org/api/stream.html#class-streamreadable) stream into a byte [WHATWG / Web API ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream):
+If you want to use a [ReadableStreamBYOBReader](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader) you should use this method.
 
 ```javascript
 import {makeByteReadableStreamFromNodeReadable} from 'node-readable-to-web-readable-stream';
@@ -37,8 +40,23 @@ const nodeReadable = fs.createReadStream('example.txt');
 // Convert to a web ReadableStream
 const webReadable = makeByteReadableStreamFromNodeReadable(nodeReadable);
 
-// Now you can use webReadable as a WHATWG ReadableStream
+// Now you can use webReadable as a WHATWG ReadableStream in byte mode
 ```
+
+If you want to use a [ReadableStreamDefaultReader](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader) you should use this method.
+```javascript
+import {makeDefaultReadableStreamFromNodeReadable} from 'node-readable-to-web-readable-stream';
+import {createReadStream} from 'fs';
+
+// Create a Node.js Readable stream
+const nodeReadable = fs.createReadStream('example.txt');
+
+// Convert to a web ReadableStream
+const webReadable = makeDefaultReadableStreamFromNodeReadable(nodeReadable);
+
+// Now you can use webReadable as a WHATWG default ReadableStream
+```
+
 
 ## Compatibility
 
