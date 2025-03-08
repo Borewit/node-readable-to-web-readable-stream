@@ -1,7 +1,18 @@
 import {stat} from "node:fs/promises";
 import {createReadStream} from "node:fs";
 import {Readable} from "node:stream";
-import {makeByteReadableStreamFromNodeReadable} from "../lib/index.js";
+import {makeByteReadableStreamFromNodeReadable, makeDefaultReadableStreamFromNodeReadable} from "../lib/index.js";
+
+export async function makeDefaultReadableStreamFromFile(filename) {
+
+  const fileInfo = await stat(filename);
+  const nodeStream = createReadStream(filename);
+
+  return {
+    fileSize: fileInfo.size,
+    stream: makeDefaultReadableStreamFromNodeReadable(nodeStream)
+  };
+}
 
 export async function makeByteReadableStreamFromFile(filename) {
 
@@ -13,6 +24,7 @@ export async function makeByteReadableStreamFromFile(filename) {
     stream: makeByteReadableStreamFromNodeReadable(nodeStream)
   };
 }
+
 
 /**
  * A mock Node.js readable-stream, using string to read from

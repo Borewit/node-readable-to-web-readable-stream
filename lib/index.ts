@@ -5,7 +5,58 @@ interface ByteReadableStreamFromNodeReadableOptions {
 }
 
 /**
- * Create a Web API `ReadableStream<Uint8Array>` from a Node.js `stream.Readable`.
+ * Create a Web API default `ReadableStream<ArrayBufferView>` from a Node.js `stream.Readable`.
+ * @param nodeReadable Node Stream to convert
+ * @param options Options
+ */
+export function makeDefaultReadableStreamFromNodeReadable(nodeReadable: Readable, options: ByteReadableStreamFromNodeReadableOptions = {}): ReadableStream<ArrayBufferView> {
+  let closed = false;
+  const queueingStrategy = new ByteLengthQueuingStrategy({ highWaterMark: options.highWaterMark ?? 16 * 1024 });
+
+  function close(controller: ReadableStreamDefaultController) {
+    if(!closed) {
+      closed = true;
+      controller.close();
+    }
+  }
+
+  return new ReadableStream({
+    start(controller: ReadableStreamDefaultController) {
+      nodeReadable.on('data', chunk => {
+        if (closed) {
+          return;
+        }
+
+        controller.enqueue(chunk);
+
+        if (controller.desiredSize != null && controller.desiredSize <= 0) {
+          // Apply backpressure if needed.
+          nodeReadable.pause();
+        }
+      });
+
+      nodeReadable.once('end', () => {
+        close(controller); // Signal EOF
+      });
+
+      nodeReadable.once('error', err => {
+        controller.error(err);
+      });
+    },
+    pull(controller: ReadableStreamDefaultController) {
+      if (nodeReadable.isPaused()) {
+        nodeReadable.resume();
+      }
+    },
+    cancel(reason) {
+      closed = true; // Avoid controller is closed twice
+      nodeReadable.destroy(reason);
+    },
+  }, queueingStrategy);
+}
+
+/**
+ * Create a Web API byte `ReadableStream<Uint8Array>` from a Node.js `stream.Readable`.
  * @param nodeReadable Node Stream to convert
  * @param options Options
  */
