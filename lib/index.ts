@@ -5,11 +5,11 @@ interface ByteReadableStreamFromNodeReadableOptions {
 }
 
 /**
- * Create a Web API default `ReadableStream<ArrayBufferView>` from a Node.js `stream.Readable`.
+ * Create a Web API default `ReadableStream<Uint8Array>` from a Node.js `stream.Readable`.
  * @param nodeReadable Node Stream to convert
  * @param options Options
  */
-export function makeDefaultReadableStreamFromNodeReadable(nodeReadable: Readable, options: ByteReadableStreamFromNodeReadableOptions = {}): ReadableStream<ArrayBufferView> {
+export function makeDefaultReadableStreamFromNodeReadable(nodeReadable: Readable, options: ByteReadableStreamFromNodeReadableOptions = {}): ReadableStream<Uint8Array> {
   let closed = false;
   const queueingStrategy = new ByteLengthQueuingStrategy({ highWaterMark: options.highWaterMark ?? 16 * 1024 });
 
@@ -20,7 +20,7 @@ export function makeDefaultReadableStreamFromNodeReadable(nodeReadable: Readable
     }
   }
 
-  return new ReadableStream({
+  return new ReadableStream<Uint8Array>({
     start(controller: ReadableStreamDefaultController) {
       nodeReadable.on('data', chunk => {
         if (closed) {
